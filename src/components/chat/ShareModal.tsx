@@ -163,10 +163,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="bg-[var(--surface)] text-[var(--foreground)] w-full max-w-md rounded-2xl border border-[var(--border)] shadow-2xl overflow-hidden animate-scaleUp">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between bg-black/5 dark:bg-white/5">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--border)] flex items-center justify-between bg-black/5 dark:bg-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shadow-xs">
               <Globe className="w-4 h-4" />
@@ -190,7 +190,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
           {/* 1. All Three Sharing Options Visible Immediately */}
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
             {/* WhatsApp */}

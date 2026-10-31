@@ -82,13 +82,13 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   return (
     <>
-      <header className="h-13 border-b border-[var(--border)] px-4 md:px-6 flex items-center justify-between bg-[var(--background)] sticky top-0 z-20 select-none">
+      <header className="h-13 border-b border-[var(--border)] px-2.5 sm:px-4 md:px-6 flex items-center justify-between bg-[var(--background)] sticky top-0 z-20 select-none pt-[env(safe-area-inset-top,0px)]">
         {/* Left: Mobile Toggle & Model Selector */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           {/* Mobile Sidebar Toggle */}
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-black/5 dark:hover:bg-white/5 transition lg:hidden"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-black/5 dark:hover:bg-white/5 transition lg:hidden shrink-0"
             title="Toggle Sidebar"
           >
             <Menu className="w-4 h-4" />
@@ -98,33 +98,33 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           {!isSidebarOpen && (
             <button
               onClick={onToggleSidebar}
-              className="hidden lg:flex p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="hidden lg:flex p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-black/5 dark:hover:bg-white/5 transition shrink-0"
               title="Open Sidebar"
             >
               <Menu className="w-4 h-4" />
             </button>
           )}
 
-          {/* Brand Logo when sidebar is closed */}
-          {!isSidebarOpen && (
-            <div className="flex items-center gap-2 mr-2">
-              <NovaOrb size="sm" />
-              <span className="font-bold text-sm tracking-tight text-[var(--foreground)] hidden sm:inline">
-                BOT BRO
-              </span>
-            </div>
-          )}
+          {/* Brand Logo - visible on mobile, and on desktop when sidebar is closed */}
+          <div className={`items-center gap-1.5 sm:gap-2 mr-1 shrink-0 ${isSidebarOpen ? "hidden xs:flex lg:hidden" : "flex"}`}>
+            <NovaOrb size="xs" />
+            <span className="font-bold text-xs sm:text-sm tracking-tight text-[var(--foreground)] hidden sm:inline">
+              BOT BRO
+            </span>
+          </div>
 
           {/* Model Selector Dropdown Button (Styled like reference screenshot) */}
-          <div className="relative">
+          <div className="relative shrink min-w-0">
             <button
               onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-[var(--foreground)] hover:text-black dark:hover:text-white px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-[var(--foreground)] hover:text-black dark:hover:text-white px-1.5 sm:px-2 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition max-w-full"
             >
-              <span>{currentModel.name}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              <span className="max-w-[100px] xs:max-w-[140px] sm:max-w-[200px] md:max-w-none truncate">
+                {currentModel.name}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] shrink-0" />
               {/* Soft magenta/red live status dot from screenshot */}
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E05688] ml-0.5" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E05688] ml-0.5 shrink-0" />
             </button>
 
             {/* Model Dropdown Menu */}
@@ -186,11 +186,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
         </div>
 
         {/* Right Action Buttons: Share, Archive, Report */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Share Button */}
           <button
             onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
+            className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
             title="Share chat"
           >
             <Share2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -200,7 +200,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           {/* Archive Button */}
           <button
             onClick={handleArchive}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
+            className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
             title="Archive this chat"
           >
             <Archive className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -210,7 +210,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           {/* Report Button */}
           <button
             onClick={handleReport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
+            className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
             title="Report or give feedback"
           >
             {reported ? (
@@ -225,14 +225,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
           {hasArtifacts && (
             <button
               onClick={onToggleArtifacts}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition shadow-xs ${
+              className={`flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium transition shadow-xs ${
                 isArtifactsOpen
                   ? "bg-[#202020] text-white"
                   : "border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-[var(--foreground)]"
               }`}
+              title="Toggle Artifacts"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Artifacts</span>
+              <span className="hidden sm:inline">Artifacts</span>
             </button>
           )}
         </div>

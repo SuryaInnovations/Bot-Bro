@@ -190,11 +190,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }
 
+  // Mobile auto-close helper
+  const handleSelectConv = (id: string) => {
+    onSelectConversation(id);
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      onToggle();
+    }
+  };
+
+  const handleNewChatClick = () => {
+    onNewChat();
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      onToggle();
+    }
+  };
+
+  const handleNewChatInProjectClick = (projectId: string) => {
+    if (onNewChatInProject) {
+      onNewChatInProject(projectId);
+    } else {
+      onNewChat();
+    }
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      onToggle();
+    }
+  };
+
   if (!isOpen) {
     return (
       <button
         onClick={onToggle}
-        className="fixed left-3.5 top-3.5 z-30 p-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--foreground)] shadow-xs hover:shadow transition flex items-center justify-center group"
+        className="hidden fixed left-3.5 top-3.5 z-30 p-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:text-[var(--foreground)] shadow-xs hover:shadow transition items-center justify-center group"
         title="Open Sidebar"
       >
         <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -204,15 +230,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile Backdrop Overlay */}
       <div
         onClick={onToggle}
-        className="fixed inset-0 bg-black/40 z-30 lg:hidden backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-xs transition-opacity animate-fadeIn"
       />
 
-      <aside className="w-[260px] h-full shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] flex flex-col justify-between select-none relative z-30 transition-all font-sans">
+      <aside className="fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] h-full border-r border-[var(--border)] bg-[var(--sidebar-bg)] flex flex-col justify-between select-none shadow-2xl lg:shadow-none lg:relative lg:inset-auto lg:z-30 lg:w-[260px] xl:w-[280px] shrink-0 transition-all font-sans">
         {/* Brand Header */}
-        <div className="flex items-center justify-between p-3.5 pb-2.5 border-b border-[var(--border)] bg-[var(--surface)]">
+        <div className="flex items-center justify-between p-3.5 pb-2.5 pt-[calc(0.875rem+env(safe-area-inset-top,0px))] border-b border-[var(--border)] bg-[var(--surface)]">
           <div className="flex items-center gap-2.5">
             <NovaOrb size="sm" />
             <div className="flex flex-col">
@@ -257,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* 2. Prominent New Chat Button */}
           <button
-            onClick={onNewChat}
+            onClick={handleNewChatClick}
             className="w-full px-3 py-2.5 rounded-xl bg-[#202020] hover:bg-black text-white text-xs font-semibold flex items-center justify-between shadow-xs transition mb-3 group"
           >
             <div className="flex items-center gap-2">
@@ -413,11 +439,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (onNewChatInProject) {
-                                    onNewChatInProject(project.id);
-                                  } else {
-                                    onNewChat();
-                                  }
+                                  handleNewChatInProjectClick(project.id);
                                 }}
                                 className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--foreground)] hover:bg-black/10 dark:hover:bg-white/10"
                                 title="New chat in this project"
@@ -449,7 +471,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               >
                                 <button
                                   onClick={() => {
-                                    if (onNewChatInProject) onNewChatInProject(project.id);
+                                    handleNewChatInProjectClick(project.id);
                                     setProjectMenuOpenId(null);
                                   }}
                                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-[var(--surface-subtle)] text-[var(--foreground)] text-left"
@@ -487,7 +509,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           {projectChats.length === 0 ? (
                             <button
                               onClick={() => {
-                                if (onNewChatInProject) onNewChatInProject(project.id);
+                                handleNewChatInProjectClick(project.id);
                               }}
                               className="w-full text-left py-1 px-2 text-[11px] text-[var(--text-muted)] hover:text-[var(--foreground)] italic flex items-center gap-1.5"
                             >
@@ -525,7 +547,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* 5. Bottom User Profile & Settings Bar */}
-        <div className="p-3 border-t border-[var(--border)] bg-[var(--surface)] shrink-0 flex items-center justify-between gap-2">
+        <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] border-t border-[var(--border)] bg-[var(--surface)] shrink-0 flex items-center justify-between gap-2">
           <button
             onClick={onOpenSettings}
             className="flex items-center gap-2.5 text-left p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition flex-1 min-w-0"
@@ -627,7 +649,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <>
             <button
-              onClick={() => onSelectConversation(conv.id)}
+              onClick={() => handleSelectConv(conv.id)}
               className="flex-1 text-left px-2.5 py-1.5 truncate"
               title={conv.title}
             >

@@ -135,17 +135,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   return (
     <div
-      className={`group py-5 px-4 md:px-6 transition-colors ${
+      className={`group py-4 sm:py-5 px-3 sm:px-4 md:px-6 transition-colors ${
         isUser
           ? "bg-[var(--surface-subtle)]/40 hover:bg-[var(--surface-subtle)]/60"
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-3xl mx-auto flex gap-3 md:gap-4 items-start">
+      <div className="max-w-3xl mx-auto flex gap-2.5 sm:gap-4 items-start w-full">
         {/* Role Avatar */}
         <div className="shrink-0 mt-0.5">
           {isUser ? (
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 border border-[var(--border)] flex items-center justify-center font-semibold text-xs text-white shadow-xs">
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-600 border border-[var(--border)] flex items-center justify-center font-semibold text-xs text-white shadow-xs">
               S
             </div>
           ) : (
@@ -174,7 +174,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               {message.attachments.map((att) => (
                 <div
                   key={att.id}
-                  className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-xs max-w-xs shadow-subtle"
+                  className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface)] border border-[var(--border)] text-xs w-full sm:max-w-xs shadow-subtle"
                 >
                   {att.base64Data && att.type.startsWith("image/") ? (
                     <img
@@ -239,11 +239,28 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             </div>
           ) : (
             /* Main Rendered Markdown */
-            <div className="prose text-sm leading-relaxed overflow-hidden">
+            <div className="prose text-sm leading-relaxed max-w-full break-words overflow-x-auto">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}
                 components={{
+                  table({ children }: any) {
+                    return (
+                      <div className="responsive-table-wrapper">
+                        <table>{children}</table>
+                      </div>
+                    );
+                  },
+                  img({ src, alt }: any) {
+                    return (
+                      <img
+                        src={src}
+                        alt={alt}
+                        className="max-w-full h-auto rounded-lg border border-[var(--border)] my-2"
+                        loading="lazy"
+                      />
+                    );
+                  },
                   a({ href, children }: any) {
                     const isDownload = typeof href === "string" && href.includes("/api/conversion/download/");
                     if (isDownload) {
@@ -276,7 +293,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
                     if (!inline && lang) {
                       return (
-                        <div className="my-3 rounded-lg border border-[var(--border)] bg-[#1e1e1e] text-white text-xs overflow-hidden shadow-subtle">
+                        <div className="my-3 rounded-lg border border-[var(--border)] bg-[#1e1e1e] text-white text-xs overflow-hidden shadow-subtle max-w-full">
                           <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-neutral-800 text-neutral-400 font-mono text-[11px]">
                             <span>{lang}</span>
                             <button
@@ -408,10 +425,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({
           )}
 
           {/* Message Bottom Action Bar */}
-          <div className="flex items-center gap-2 pt-1 opacity-80 group-hover:opacity-100 transition-opacity text-[var(--text-muted)]">
+          <div className="flex items-center gap-1.5 sm:gap-2 pt-1 opacity-80 group-hover:opacity-100 transition-opacity text-[var(--text-muted)]">
             <button
               onClick={handleCopy}
-              className="p-1 rounded hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition"
+              className="p-1.5 rounded-lg hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition"
               title="Copy message"
             >
               {copied ? (
@@ -424,7 +441,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             {isUser && onEdit && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="p-1 rounded hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition"
+                className="p-1.5 rounded-lg hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition"
                 title="Edit message"
               >
                 <Edit2 className="w-3.5 h-3.5" />
@@ -434,7 +451,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
             {!isUser && onRegenerate && !isStreaming && (
               <button
                 onClick={onRegenerate}
-                className="p-1 rounded hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition"
+                className="p-1.5 rounded-lg hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] transition"
                 title="Regenerate response"
               >
                 <RotateCcw className="w-3.5 h-3.5" />

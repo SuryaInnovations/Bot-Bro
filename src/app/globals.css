@@ -18,6 +18,12 @@
   --text-muted: #777777;
   --sidebar-bg: #fafafa;
   --rail-bg: #fbfbfb;
+
+  /* Mobile hardware safe-area insets */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
 }
 
 .dark {
@@ -127,7 +133,9 @@ body {
 .prose pre {
   margin: 0.8em 0;
   border-radius: 0.5rem;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .prose code:not(pre code) {
@@ -136,4 +144,38 @@ body {
   border-radius: 0.25rem;
   font-size: 0.88em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  word-break: break-word;
+}
+
+/* Responsive Table Wrapper */
+.responsive-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+/* Math expressions overflow protection */
+.katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.35rem 0;
+}
+
+/* Mobile Touch Ergonomics */
+@media (pointer: coarse) {
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
+/* Prevent text size adjustment on orientation changes in iOS Safari */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }

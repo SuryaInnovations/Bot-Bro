@@ -75,6 +75,13 @@ export default function Home() {
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Set initial sidebar state based on viewport width (open on desktop, closed on mobile)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsSidebarOpen(window.innerWidth >= 1024);
+    }
+  }, []);
+
   // Load initial data on mount
   useEffect(() => {
     // 1. Verify Authentication Session with timeout and client-server synchronization
@@ -643,7 +650,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
+    <div className="flex h-screen h-[100dvh] w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       {/* 1. CHAT SIDEBAR (Primary Navigation & History) */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -755,7 +762,7 @@ export default function Home() {
                   />
 
                   {/* Docked Message Composer */}
-                  <div className="p-3 shrink-0 bg-gradient-to-t from-[var(--background)] via-[var(--background)] to-transparent pt-2">
+                  <div className="p-2 sm:p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shrink-0 bg-gradient-to-t from-[var(--background)] via-[var(--background)] to-transparent pt-2 w-full">
                     <MessageComposer
                       input={input}
                       setInput={setInput}

@@ -71,7 +71,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(
-        textareaRef.current.scrollHeight,
+        Math.max(textareaRef.current.scrollHeight, 36),
         220
       )}px`;
     }
@@ -175,7 +175,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 select-none">
+    <div className="w-full max-w-3xl mx-auto px-1.5 sm:px-4 select-none">
       {/* Outer Composer Rounded Card (Direct recreation of reference screenshot) */}
       <div
         onDragOver={(e) => {
@@ -366,7 +366,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
         )}
 
         {/* Input Area with Sparkles Icon */}
-        <div className="px-4 pt-3.5 pb-2 flex items-start gap-2.5">
+        <div className="px-3 sm:px-4 pt-3 sm:pt-3.5 pb-2 flex items-start gap-2 sm:gap-2.5">
           <Sparkles className="w-4 h-4 text-purple-400 mt-1 shrink-0" />
           <textarea
             ref={textareaRef}
@@ -374,14 +374,14 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask me anything..."
-            rows={2}
+            rows={1}
             className="w-full bg-transparent border-none text-sm text-[var(--foreground)] placeholder-[var(--text-muted)] focus:outline-none resize-none leading-relaxed font-sans"
           />
         </div>
 
         {/* Dictation Status Banner */}
         {isDictating && (
-          <div className="mx-4 mb-2 p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 text-xs flex items-center justify-between animate-pulse">
+          <div className="mx-3 sm:mx-4 mb-2 p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 text-xs flex items-center justify-between animate-pulse">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-purple-500" />
               <span>Listening to your voice... Speak naturally.</span>
@@ -397,7 +397,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
         {/* Expandable Advanced Controls Tray */}
         {showSettingsTray && (
-          <div className="px-4 py-2 border-t border-[var(--border)] bg-[var(--surface-subtle)]/40 flex flex-wrap items-center gap-2 text-xs">
+          <div className="px-3 sm:px-4 py-2 border-t border-[var(--border)] bg-[var(--surface-subtle)]/40 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
             {/* Web Search Toggle */}
             <button
               onClick={() => setEnableWebSearch(!enableWebSearch)}
@@ -439,15 +439,15 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           </div>
         )}
 
-        {/* Bottom Control Row (Exact match to screenshot) */}
-        <div className="px-3 pb-3 pt-1 flex items-center justify-between">
+        {/* Bottom Control Row (Exact match to reference UI, fully responsive) */}
+        <div className="px-2 sm:px-3 pb-2.5 sm:pb-3 pt-1 flex items-center justify-between gap-1 flex-wrap">
           {/* Left: Attach Button */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
               title="Attach documents or images"
             >
               {isUploading ? (
@@ -455,7 +455,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               ) : (
                 <Paperclip className="w-3.5 h-3.5 text-[var(--text-muted)]" />
               )}
-              <span>Attach</span>
+              <span className="hidden xs:inline">Attach</span>
             </button>
 
             {/* Advanced Settings Toggle Button */}
@@ -474,12 +474,12 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           </div>
 
           {/* Right: Dictate, Voice, Send Pill Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Dictate Button */}
             <button
               type="button"
               onClick={handleToggleDictate}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition text-xs font-medium shadow-xs ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border transition text-xs font-medium shadow-xs ${
                 isDictating
                   ? "bg-purple-500 text-white border-purple-500"
                   : "border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-[var(--foreground)]"
@@ -491,7 +491,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               ) : (
                 <Mic className="w-3.5 h-3.5 text-[var(--text-muted)]" />
               )}
-              <span>Dictate</span>
+              <span className="hidden xs:inline">Dictate</span>
             </button>
 
             {/* Voice Button */}
@@ -507,11 +507,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                   window.speechSynthesis.speak(utt);
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] text-xs font-medium text-[var(--foreground)] transition shadow-xs"
               title="Audio Voice Synthesis"
             >
               <Volume2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              <span>Voice</span>
+              <span className="hidden xs:inline">Voice</span>
             </button>
 
             {/* Send / Stop Generation Black Pill Button */}
@@ -519,7 +519,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
               <button
                 type="button"
                 onClick={onStop}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition"
+                className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition"
                 title="Stop generation"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
@@ -530,7 +530,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
                 type="button"
                 onClick={onSend}
                 disabled={!input.trim() && attachments.length === 0}
-                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs transition ${
+                className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 rounded-full text-xs font-semibold shadow-xs transition ${
                   input.trim() || attachments.length > 0
                     ? "bg-[#202020] hover:bg-black text-white dark:bg-white dark:text-[#202020] dark:hover:bg-zinc-200 cursor-pointer"
                     : "bg-[#202020]/40 text-white/70 dark:bg-white/30 dark:text-zinc-400 cursor-not-allowed"

@@ -109,10 +109,10 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
 
   return (
     <div
-      className={`flex flex-col border-l border-[var(--border)] bg-[var(--background)] transition-all duration-300 z-20 ${
+      className={`flex flex-col border-l border-[var(--border)] bg-[var(--background)] transition-all duration-300 ${
         isFullscreen
           ? "fixed inset-0 z-50 w-full h-full"
-          : "w-full lg:w-[48%] h-full shrink-0"
+          : "fixed inset-0 z-30 lg:relative lg:inset-auto lg:z-20 lg:w-[48%] h-full shrink-0 shadow-2xl lg:shadow-none"
       }`}
     >
       {/* Top Bar */}

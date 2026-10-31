@@ -50,7 +50,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onOpenApi,
 }) => {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 relative min-h-full overflow-hidden select-none">
+    <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 relative min-h-full overflow-y-auto overflow-x-hidden select-none">
       {/* Subtle Pastel Ambient Gradient Glow (From reference screenshot) */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
         {/* Soft Lavender / Violet Glow top-right */}
@@ -61,18 +61,18 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <div className="absolute top-[35%] left-[45%] w-[320px] h-[320px] rounded-full bg-pink-100/20 dark:bg-pink-950/10 blur-[90px]" />
       </div>
 
-      <div className="w-full max-w-3xl flex flex-col items-center z-10 my-auto py-8">
+      <div className="w-full max-w-3xl flex flex-col items-center z-10 my-auto py-4 sm:py-8">
         {/* Brand Orb & Name */}
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 mb-2 sm:mb-3">
           <NovaOrb size="lg" />
-          <h1 className="text-xl font-bold tracking-tight text-[var(--foreground)]">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--foreground)]">
             BOT BRO
           </h1>
         </div>
 
         {/* Personalized Greeting */}
-        <div className="text-center mb-8">
-          <h2 className="text-2xl md:text-3xl font-normal text-[var(--text-muted)] tracking-tight">
+        <div className="text-center mb-5 sm:mb-8 px-2">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-normal text-[var(--text-muted)] tracking-tight">
             Hey 👋 <span className="font-semibold text-[var(--foreground)]">{userName ? `${userName}!` : "there!"}</span> How can I help you today?
           </h2>
         </div>
@@ -99,12 +99,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </div>
 
         {/* Conversational Quick Starters */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-4 sm:mt-5 max-w-full px-2">
           <button
             onClick={() => {
               setInput("Plan my day");
             }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-xs font-medium text-[var(--foreground)]"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-[11px] sm:text-xs font-medium text-[var(--foreground)]"
           >
             <Calendar className="w-3.5 h-3.5 text-blue-500" />
             <span>"Plan my day"</span>
@@ -114,7 +114,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             onClick={() => {
               setInput("What's the weather today?");
             }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-xs font-medium text-[var(--foreground)]"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-[11px] sm:text-xs font-medium text-[var(--foreground)]"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>"What's the weather today?"</span>
@@ -124,7 +124,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             onClick={() => {
               setInput("Give me today's important updates");
             }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-xs font-medium text-[var(--foreground)]"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-[11px] sm:text-xs font-medium text-[var(--foreground)]"
           >
             <FileText className="w-3.5 h-3.5 text-emerald-500" />
             <span>"Today's updates"</span>
@@ -134,7 +134,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             onClick={() => {
               setInput("What is today's gold price in India?");
             }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-xs font-medium text-[var(--foreground)]"
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-subtle)] hover:border-zinc-300 dark:hover:border-zinc-700 transition shadow-xs text-[11px] sm:text-xs font-medium text-[var(--foreground)]"
           >
             <Layers className="w-3.5 h-3.5 text-purple-500" />
             <span>"Today's gold price"</span>
@@ -142,7 +142,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </div>
 
         {/* Footer Disclaimer (From screenshot) */}
-        <p className="text-[11px] text-[var(--text-muted)] text-center mt-12 max-w-lg leading-relaxed">
+        <p className="text-[10px] sm:text-[11px] text-[var(--text-muted)] text-center mt-6 sm:mt-12 max-w-lg leading-relaxed px-2">
           BOT BRO can err. BOT BRO does not use private data from your workspace for model training.
         </p>
       </div>
