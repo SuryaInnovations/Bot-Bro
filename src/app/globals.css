@@ -1,0 +1,139 @@
+@import "katex/dist/katex.min.css";
+@import "prismjs/themes/prism-tomorrow.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #202123;
+  --surface: #ffffff;
+  --surface-subtle: #fafafa;
+  --border: #eaeaea;
+  --border-subtle: #f0f0f0;
+  --accent: #202020;
+  --accent-hover: #000000;
+  --accent-purple: #8b5cf6;
+  --text-muted: #777777;
+  --sidebar-bg: #fafafa;
+  --rail-bg: #fbfbfb;
+}
+
+.dark {
+  --background: #141416;
+  --foreground: #ededed;
+  --surface: #1e1e20;
+  --surface-subtle: #252528;
+  --border: #2a2a2e;
+  --border-subtle: #222225;
+  --accent: #ffffff;
+  --accent-hover: #eaeaea;
+  --accent-purple: #a78bfa;
+  --text-muted: #888888;
+  --sidebar-bg: #1a1a1c;
+  --rail-bg: #161618;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 145, 135, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 145, 135, 0.45);
+}
+
+/* Markdown prose typography */
+.prose {
+  color: var(--foreground);
+  max-width: 100%;
+}
+
+.prose p {
+  margin-top: 0.6em;
+  margin-bottom: 0.6em;
+  line-height: 1.68;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: var(--foreground);
+  font-weight: 600;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.prose h1 { font-size: 1.5rem; }
+.prose h2 { font-size: 1.3rem; }
+.prose h3 { font-size: 1.15rem; }
+
+.prose ul, .prose ol {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  padding-left: 1.4em;
+}
+
+.prose li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin: 0.8em 0;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+
+.prose th, .prose td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose th {
+  background: var(--surface-subtle);
+  font-weight: 600;
+}
+
+.prose pre {
+  margin: 0.8em 0;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.prose code:not(pre code) {
+  background: var(--surface-subtle);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.88em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
