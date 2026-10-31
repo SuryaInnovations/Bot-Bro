@@ -100,6 +100,53 @@ export function isSupabaseConfigured(): boolean {
   return getSupabaseConfigStatus().isConfigured;
 }
 
+/**
+ * Returns the resolved site URL for OAuth redirects and callbacks.
+ * Uses NEXT_PUBLIC_SITE_URL in production (defaulting to https://bot-bro-one.vercel.app),
+ * and localhost during local development.
+ */
+export function getSiteUrl(): string {
+  // If running in browser and on local machine during development
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return window.location.origin;
+    }
+  }
+
+  // If local development environment on server
+  if (process.env.NODE_ENV === "development" && !process.env.NEXT_PUBLIC_SITE_URL) {
+    return "http://localhost:3000";
+  }
+
+  // Next.js client/server configured production site URL
+  const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (envSiteUrl) {
+    const formatted =
+      envSiteUrl.startsWith("http://") || envSiteUrl.startsWith("https://")
+        ? envSiteUrl
+        : `https://${envSiteUrl}`;
+    return formatted.replace(/\/+$/, "");
+  }
+
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL.replace(/\/+$/, "")}`;
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  return "http://localhost:3000";
+}
+
+/**
+ * Returns the full OAuth callback redirect URL.
+ */
+export function getAuthCallbackUrl(): string {
+  return `${getSiteUrl()}/auth/callback`;
+}
+
 export function getSupabaseBrowserClient(): SupabaseClient | null {
   if (typeof window === "undefined") return null;
   const status = getSupabaseConfigStatus();

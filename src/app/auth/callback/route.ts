@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { normalizeSupabaseUrl, getSupabaseConfigStatus } from "@/lib/supabase/client";
+import { normalizeSupabaseUrl, getSupabaseConfigStatus, getSiteUrl } from "@/lib/supabase/client";
 import { loginWithGoogleOAuth } from "@/lib/auth/auth-service";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export const runtime = "nodejs";
  */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
-  const origin = requestUrl.origin;
+  const siteUrl = getSiteUrl();
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") || "/";
   const urlError = requestUrl.searchParams.get("error");
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     descLower.includes("cancel") ||
     descLower.includes("denied")
   ) {
-    return NextResponse.redirect(`${origin}/login`);
+    return NextResponse.redirect(`${siteUrl}/login`);
   }
 
   // 2. Handle specific OAuth provider configuration errors
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     urlError?.includes("unsupported_provider")
   ) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
+      `${siteUrl}/login?error=${encodeURIComponent(
         "Google provider is disabled in Supabase. Enable Google in Supabase Dashboard → Authentication → Providers → Google."
       )}`
     );
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     descLower.includes("not configured")
   ) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
+      `${siteUrl}/login?error=${encodeURIComponent(
         "Google OAuth credentials missing: Add Client ID and Secret in Supabase Dashboard → Authentication → Providers → Google."
       )}`
     );
@@ -58,15 +58,15 @@ export async function GET(request: NextRequest) {
 
   if (descLower.includes("redirect") || descLower.includes("url not allowed")) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
-        `Redirect URL not allowed: Ensure ${origin}/auth/callback is added in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.`
+      `${siteUrl}/login?error=${encodeURIComponent(
+        `Redirect URL not allowed: Ensure ${siteUrl}/auth/callback is added in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.`
       )}`
     );
   }
 
   if (urlError) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
+      `${siteUrl}/login?error=${encodeURIComponent(
         errorDescription ? `Google OAuth error: ${errorDescription}` : `Google OAuth error code: ${urlError}`
       )}`
     );
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
   // 3. Verify code is present
   if (!code) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent("Authorization code missing from OAuth redirect.")}`
+      `${siteUrl}/login?error=${encodeURIComponent("Authorization code missing from OAuth redirect.")}`
     );
   }
 
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
   const configStatus = getSupabaseConfigStatus();
   if (!configStatus.isConfigured) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
+      `${siteUrl}/login?error=${encodeURIComponent(
         configStatus.errorMessage || "Supabase configuration missing in .env.local."
       )}`
     );
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
   const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!rawUrl || !rawKey) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent("Supabase credentials missing in .env.local.")}`
+      `${siteUrl}/login?error=${encodeURIComponent("Supabase credentials missing in .env.local.")}`
     );
   }
 
@@ -101,10 +101,10 @@ export async function GET(request: NextRequest) {
   const cleanKey = rawKey.trim();
 
   // Prepare redirect response to target URL (defaults to /)
-  const targetUrl = next.startsWith("/") ? `${origin}${next}` : `${origin}/`;
-  let response = NextResponse.redirect(targetUrl);
+  const targetUrl = next.startsWith("/") ? `${siteUrl}${next}` : `${siteUrl}/`;
+  const response = NextResponse.redirect(targetUrl);
 
-  // 5. Initialize Supabase SSR server client to exchange the PKCE code
+  // 5. Initialize Supabase SSR server client to exchange the PKCE code exactly once
   const supabase = createServerClient(cleanUrl, cleanKey, {
     cookies: {
       getAll() {
@@ -114,7 +114,6 @@ export async function GET(request: NextRequest) {
         cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
         });
-        response = NextResponse.redirect(targetUrl);
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
@@ -126,26 +125,28 @@ export async function GET(request: NextRequest) {
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
-      console.error("[OAuth Code Exchange Error]:", exchangeError);
+      console.error("[OAuth Callback] Code exchange failed:", exchangeError.name, exchangeError.message);
       const msg = exchangeError.message.toLowerCase();
       if (msg.includes("pkce") || msg.includes("verifier")) {
         return NextResponse.redirect(
-          `${origin}/login?error=${encodeURIComponent(
+          `${siteUrl}/login?error=${encodeURIComponent(
             "PKCE code verifier not found in storage. Please restart login in the same browser window."
           )}`
         );
       }
       if (msg.includes("expired") || msg.includes("invalid")) {
         return NextResponse.redirect(
-          `${origin}/login?error=${encodeURIComponent(
+          `${siteUrl}/login?error=${encodeURIComponent(
             "OAuth code expired or already used. Please sign in with Google again."
           )}`
         );
       }
       return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent(`OAuth code exchange failed: ${exchangeError.message}`)}`
+        `${siteUrl}/login?error=${encodeURIComponent(`OAuth code exchange failed: ${exchangeError.message}`)}`
       );
     }
+
+    console.log("[OAuth Callback] Code exchange successful. Initializing session for user:", data?.session?.user?.id ? "user_authenticated" : "unknown");
 
     // 6. Synchronize authenticated user with Bot Bro internal session
     if (data?.session?.user) {
@@ -172,9 +173,9 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (err: any) {
-    console.error("[OAuth Callback Exception]:", err);
+    console.error("[OAuth Callback Exception]:", err?.name || "Error", err?.message || "Internal error");
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(
+      `${siteUrl}/login?error=${encodeURIComponent(
         err?.message || "Failed to complete Google authentication. Please try again."
       )}`
     );

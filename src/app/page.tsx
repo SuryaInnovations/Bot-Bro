@@ -33,6 +33,7 @@ import { KnowledgeWorkspace } from "@/components/knowledge/KnowledgeWorkspace";
 import { WorkflowBuilder } from "@/components/workflows/WorkflowBuilder";
 import { MultimodalStudio } from "@/components/multimodal/MultimodalStudio";
 import { PersonalAssistantWorkspace } from "@/components/assistant/PersonalAssistantWorkspace";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function Home() {
   const router = useRouter();
@@ -40,6 +41,7 @@ export default function Home() {
   // --- Authentication State ---
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authChecking, setAuthChecking] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // --- Persistent State from LocalStorage / Store ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -75,8 +77,10 @@ export default function Home() {
 
   // Load initial data on mount
   useEffect(() => {
-    // 1. Verify Authentication Session
+    // 1. Verify Authentication Session with timeout and client-server synchronization
     let localUser: any = null;
+    let isResolved = false;
+
     try {
       const stored = localStorage.getItem("nova_user_session");
       if (stored) {
@@ -85,30 +89,73 @@ export default function Home() {
           localUser = parsed.user;
           setCurrentUser(parsed.user);
           setAuthChecking(false);
+          isResolved = true;
         }
       }
     } catch {}
 
+    // Check direct Supabase client session in browser as immediate validation
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (supabase) {
+        supabase.auth.getSession().then(({ data }) => {
+          if (data?.session?.user && !isResolved) {
+            const sbUser = data.session.user;
+            const userObj = {
+              id: sbUser.id,
+              email: sbUser.email || "",
+              fullName:
+                sbUser.user_metadata?.full_name ||
+                sbUser.user_metadata?.name ||
+                sbUser.email?.split("@")[0] ||
+                "User",
+              avatarUrl: sbUser.user_metadata?.avatar_url || sbUser.user_metadata?.picture || "",
+              role: "user",
+              emailVerified: Boolean(sbUser.email_confirmed_at || sbUser.confirmed_at),
+            };
+            localUser = userObj;
+            setCurrentUser((prev: any) => prev || userObj);
+            setAuthChecking(false);
+            isResolved = true;
+          }
+        }).catch(() => {});
+      }
+    } catch {}
+
+    // Safety timeout prevents infinite loading screen
+    const authTimeout = setTimeout(() => {
+      if (!isResolved) {
+        setAuthChecking(false);
+        setAuthError("Session authentication timed out. Please retry or sign in again.");
+      }
+    }, 8000);
+
     fetch("/api/auth/session")
       .then((res) => res.json())
       .then((data) => {
+        clearTimeout(authTimeout);
         if (data.authenticated && data.user) {
+          isResolved = true;
           setCurrentUser(data.user);
           localStorage.setItem("nova_user_session", JSON.stringify(data));
           setAuthChecking(false);
+          setAuthError(null);
           // Load conversations and projects for this user
           const userConvs = store.getConversations(data.user.id);
           setConversations(userConvs);
           const userProjects = store.getProjects(data.user.id);
           setProjects(userProjects);
-        } else if (!localUser) {
+        } else if (!localUser && !isResolved) {
+          setAuthChecking(false);
           router.replace("/login");
         } else {
           setAuthChecking(false);
         }
       })
       .catch(() => {
-        if (!localUser) {
+        clearTimeout(authTimeout);
+        if (!localUser && !isResolved) {
+          setAuthChecking(false);
           router.replace("/login");
         } else {
           setAuthChecking(false);
@@ -522,6 +569,12 @@ export default function Home() {
     try {
       await fetch("/api/auth/session", { method: "POST" });
     } catch {}
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch {}
     localStorage.removeItem("nova_user_session");
     router.replace("/login");
   };
@@ -551,6 +604,39 @@ export default function Home() {
         <div className="mt-4 flex items-center gap-2 text-xs text-zinc-400">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span>Authenticating BOT BRO session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (authError && !currentUser) {
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#090A0F] text-zinc-100 p-4 select-none">
+        <NovaOrb size="lg" />
+        <div className="mt-6 max-w-sm w-full bg-zinc-900/90 border border-red-500/30 rounded-2xl p-5 text-center shadow-2xl backdrop-blur-md">
+          <div className="w-10 h-10 mx-auto rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping" />
+          </div>
+          <h3 className="text-sm font-semibold text-zinc-200 mb-1">Session Notice</h3>
+          <p className="text-xs text-zinc-400 mb-4">{authError}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setAuthError(null);
+                setAuthChecking(true);
+                window.location.reload();
+              }}
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex-1 py-2 px-3 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+            >
+              Sign In Again
+            </button>
+          </div>
         </div>
       </div>
     );

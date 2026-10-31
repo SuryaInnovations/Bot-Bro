@@ -22,6 +22,7 @@ import {
   getSupabaseBrowserClient,
   isSupabaseConfigured,
   getSupabaseConfigStatus,
+  getAuthCallbackUrl,
 } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
@@ -209,7 +210,7 @@ export default function RegisterPage() {
         return;
       }
 
-      const redirectTo = `${window.location.origin}/auth/callback`;
+      const redirectTo = getAuthCallbackUrl() || `${window.location.origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

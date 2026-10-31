@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { normalizeSupabaseUrl, getSupabaseConfigStatus } from "@/lib/supabase/client";
+import { normalizeSupabaseUrl, getSupabaseConfigStatus, getSiteUrl } from "@/lib/supabase/client";
 
 /**
  * Next.js Middleware for Supabase SSR session refreshing and cookie propagation.
@@ -72,7 +72,13 @@ export async function middleware(request: NextRequest) {
 
     // If authenticated user attempts to access /login or /register, redirect to /
     if ((user || hasNovaToken) && (pathname === "/login" || pathname === "/register")) {
-      return NextResponse.redirect(new URL("/", request.url));
+      const siteUrl = getSiteUrl();
+      const redirectResponse = NextResponse.redirect(new URL("/", siteUrl));
+      // Preserve any updated or refreshed cookies from response
+      response.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value);
+      });
+      return redirectResponse;
     }
 
     return response;

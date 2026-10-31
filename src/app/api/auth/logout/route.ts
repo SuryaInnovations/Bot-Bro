@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logoutSession } from "@/lib/auth/auth-service";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,15 @@ export async function POST(req: NextRequest) {
 
     if (token) {
       logoutSession(token);
+    }
+
+    const supabase = createServerSupabaseClient();
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (sbErr: any) {
+        console.warn("[Logout] Supabase signOut notice:", sbErr?.message);
+      }
     }
 
     const response = NextResponse.json({ success: true, message: "Logged out successfully" });

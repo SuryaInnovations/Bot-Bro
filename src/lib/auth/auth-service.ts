@@ -65,6 +65,25 @@ function generateSecureToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
 
+const SESSION_SIGNING_SECRET =
+  process.env.JWT_SECRET ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "bot-bro-auth-signature-salt-2026";
+
+export function generateSecureSessionToken(user: UserProfile): string {
+  const payload = Buffer.from(
+    JSON.stringify({
+      u: user,
+      exp: Date.now() + 7 * 24 * 3600 * 1000,
+    })
+  ).toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", SESSION_SIGNING_SECRET)
+    .update(payload)
+    .digest("hex");
+  return `nvs_${payload}.${signature}`;
+}
+
 function sanitizeUser(user: StoredUser): UserProfile {
   const { passwordHash, salt, ...sanitized } = user;
   return sanitized;
@@ -145,10 +164,11 @@ export async function registerWithEmailPassword(
   });
 
   // 6. Create active session
-  const sessionToken = generateSecureToken();
+  const sanitizedNewUser = sanitizeUser(newUser);
+  const sessionToken = generateSecureSessionToken(sanitizedNewUser);
   const session: UserSession = {
     token: sessionToken,
-    user: sanitizeUser(newUser),
+    user: sanitizedNewUser,
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(), // 7 days
     createdAt: now,
   };
@@ -156,7 +176,7 @@ export async function registerWithEmailPassword(
 
   return {
     success: true,
-    user: sanitizeUser(newUser),
+    user: sanitizedNewUser,
     session,
     token: sessionToken,
     requiresEmailVerification: true,
@@ -181,10 +201,11 @@ export async function loginWithEmailPassword(
   }
 
   // Generate new session
-  const sessionToken = generateSecureToken();
+  const sanitized = sanitizeUser(user);
+  const sessionToken = generateSecureSessionToken(sanitized);
   const session: UserSession = {
     token: sessionToken,
-    user: sanitizeUser(user),
+    user: sanitized,
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
     createdAt: new Date().toISOString(),
   };
@@ -193,7 +214,7 @@ export async function loginWithEmailPassword(
 
   return {
     success: true,
-    user: sanitizeUser(user),
+    user: sanitized,
     session,
     token: sessionToken,
   };
@@ -227,10 +248,11 @@ export async function loginWithGoogleOAuth(
     user.updatedAt = now;
   }
 
-  const sessionToken = generateSecureToken();
+  const sanitized = sanitizeUser(user);
+  const sessionToken = generateSecureSessionToken(sanitized);
   const session: UserSession = {
     token: sessionToken,
-    user: sanitizeUser(user),
+    user: sanitized,
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
     createdAt: now,
   };
@@ -238,7 +260,7 @@ export async function loginWithGoogleOAuth(
 
   return {
     success: true,
-    user: sanitizeUser(user),
+    user: sanitized,
     session,
     token: sessionToken,
   };
@@ -250,18 +272,48 @@ export async function loginWithGoogleOAuth(
 
 export function validateSession(token: string): UserProfile | null {
   if (!token) return null;
-  const session = sessionsStore.find((s) => s.token === token);
-  if (!session) return null;
 
-  if (new Date(session.expiresAt).getTime() < Date.now()) {
-    // Expired
-    sessionsStore = sessionsStore.filter((s) => s.token !== token);
-    return null;
+  // 1. Check stateless HMAC-signed token
+  if (token.startsWith("nvs_")) {
+    try {
+      const parts = token.slice(4).split(".");
+      if (parts.length === 2) {
+        const [payloadStr, signature] = parts;
+        const expectedSig = crypto
+          .createHmac("sha256", SESSION_SIGNING_SECRET)
+          .update(payloadStr)
+          .digest("hex");
+
+        if (
+          expectedSig.length === signature.length &&
+          crypto.timingSafeEqual(Buffer.from(expectedSig), Buffer.from(signature))
+        ) {
+          const payload = JSON.parse(Buffer.from(payloadStr, "base64url").toString("utf-8"));
+          if (payload.exp && payload.exp > Date.now()) {
+            const existing = usersStore.find((u) => u.id === payload.u.id);
+            return existing ? sanitizeUser(existing) : (payload.u as UserProfile);
+          }
+        }
+      }
+    } catch {
+      // Fall through to in-memory check
+    }
   }
 
-  // Refresh user state from store
-  const user = usersStore.find((u) => u.id === session.user.id);
-  return user ? sanitizeUser(user) : session.user;
+  // 2. Fallback to in-memory sessionsStore (backwards compatibility)
+  const session = sessionsStore.find((s) => s.token === token);
+  if (session) {
+    if (new Date(session.expiresAt).getTime() < Date.now()) {
+      // Expired
+      sessionsStore = sessionsStore.filter((s) => s.token !== token);
+      return null;
+    }
+    // Refresh user state from store
+    const user = usersStore.find((u) => u.id === session.user.id);
+    return user ? sanitizeUser(user) : session.user;
+  }
+
+  return null;
 }
 
 export function logoutSession(token: string): boolean {
