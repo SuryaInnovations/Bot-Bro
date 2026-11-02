@@ -27,6 +27,7 @@ export type RequestIntentCategory =
   | "artifact_export";
 
 import { detectImageIntent } from "../images/image-intent";
+import { detectCodingIntent } from "../coding/coding-prompt";
 
 export interface IntentClassificationResult {
   category: RequestIntentCategory;
@@ -374,19 +375,24 @@ export function classifyUserMessage(
     };
   }
 
-  // 14. Coding
-  if (
-    m.startsWith("write code") ||
-    m.startsWith("write a python") ||
-    m.startsWith("write a javascript") ||
-    m.includes("fix this bug") ||
-    m.includes("implement function")
-  ) {
+  // 14. Coding Intent Detection (Universal language support, DSA, debugging, code-only, without-comments)
+  const codingIntent = detectCodingIntent(message);
+  if (codingIntent.isCoding) {
     return {
       category: "coding",
-      confidence: 0.88,
-      extractedParameters: { prompt: message },
-      reasoning: "User requested code generation or isolated sandbox execution.",
+      confidence: 0.95,
+      extractedParameters: {
+        prompt: message,
+        languages: codingIntent.detectedLanguages,
+        isCodeOnly: codingIntent.isCodeOnly,
+        isWithoutComments: codingIntent.isWithoutComments,
+        isExplainLineByLine: codingIntent.isExplainLineByLine,
+        isShortCode: codingIntent.isShortCode,
+        isBeginnerFriendly: codingIntent.isBeginnerFriendly,
+        isDebugging: codingIntent.isDebugging,
+        isDSA: codingIntent.isDSA,
+      },
+      reasoning: `User requested programming/coding task (${codingIntent.detectedLanguages.join(", ") || "software development"}).`,
     };
   }
 

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ModelInfo, ResponseStyle } from "@/types";
+import { BOT_BRO_CODING_STANDARDS, CodingRequestContext } from "@/lib/coding/coding-prompt";
 
 export const CLAUDE_MODELS: ModelInfo[] = [
   {
@@ -126,77 +127,4 @@ export function getAnthropicClient(customApiKey?: string): Anthropic {
   });
 }
 
-/**
- * Generates the NOVA AI System Prompt incorporating style, memories, and instructions.
- */
-export function buildNovaSystemPrompt(options: {
-  style?: ResponseStyle;
-  projectInstructions?: string;
-  userMemories?: string[];
-  enableArtifacts?: boolean;
-}): string {
-  const { style = "normal", projectInstructions, userMemories = [], enableArtifacts = true } = options;
-
-  let styleGuide = "";
-  switch (style) {
-    case "concise":
-      styleGuide = "Keep your answers succinct, direct, and to the point. Omit filler and unnecessary explanations.";
-      break;
-    case "detailed":
-      styleGuide = "Provide comprehensive, deeply analyzed answers covering context, edge cases, underlying principles, and concrete examples.";
-      break;
-    case "educational":
-      styleGuide = "Explain concepts clearly from first principles, using intuitive analogies, step-by-step reasoning, and learning checks.";
-      break;
-    case "professional":
-      styleGuide = "Use an executive, polished, and structured tone suitable for professional, enterprise, and academic environments.";
-      break;
-    case "creative":
-      styleGuide = "Be imaginative, engaging, expressive, and original while maintaining coherence and substance.";
-      break;
-    case "normal":
-    default:
-      styleGuide = "Be helpful, thoughtful, intelligent, insightful, and clear. Match the user's depth and tone.";
-      break;
-  }
-
-  let prompt = `You are NOVA AI, a premier AI assistant powered by Anthropic's Claude. You combine world-class intelligence, deep reasoning, coding excellence, and thoughtful design.
-
-CORE ATTRIBUTES:
-- Think carefully through multi-step and complex problems before delivering clear, verified answers.
-- Write robust, production-quality, modern, well-typed code with clean architecture and error handling.
-- Maintain seamless conversation continuity and remember details shared earlier in the conversation.
-- When uncertain or when facts cannot be verified, state uncertainty honestly. Never fabricate citations, statistics, or sources.
-- Tone and Style: ${styleGuide}
-`;
-
-  if (enableArtifacts) {
-    prompt += `
-ARTIFACT SYSTEM GUIDELINES:
-NOVA AI supports creating rich, standalone Artifacts alongside the chat. An Artifact is ideal for:
-1. Complete self-contained HTML/JS/CSS interactive applications, dashboards, or calculators.
-2. React components (using JSX / Tailwind).
-3. SVG illustrations, icons, diagrams.
-4. Mermaid diagrams for flowcharts, sequences, architecture.
-5. Standalone code projects, scripts, or complete markdown reports.
-
-When delivering an Artifact, encapsulate it cleanly within an XML tag structure so NOVA's split-screen workspace can render it:
-\`\`\`xml
-<antArtifact identifier="unique-id" type="text/html|application/vnd.ant.react|application/vnd.ant.code|image/svg+xml|application/vnd.ant.mermaid|text/markdown" title="Descriptive Title" language="javascript|python|typescript|html|css">
-... artifact content ...
-</antArtifact>
-\`\`\`
-For regular explanations or small code snippets (under ~15 lines), use normal markdown code blocks without artifact wrapping.
-`;
-  }
-
-  if (projectInstructions && projectInstructions.trim().length > 0) {
-    prompt += `\nPROJECT INSTRUCTIONS AND CONTEXT:\n${projectInstructions.trim()}\n`;
-  }
-
-  if (userMemories && userMemories.length > 0) {
-    prompt += `\nPERSISTENT USER MEMORY (Context to remember about the user):\n${userMemories.map((m) => `- ${m}`).join("\n")}\n`;
-  }
-
-  return prompt;
-}
+export { buildNovaSystemPrompt } from "@/lib/coding/coding-prompt";

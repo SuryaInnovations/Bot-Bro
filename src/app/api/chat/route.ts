@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
 import { buildNovaSystemPrompt } from "@/lib/anthropic/client";
+import {
+  detectCodingIntent,
+  formatCodingResponse,
+  validateBeginnerCodeQuality,
+} from "@/lib/coding/coding-prompt";
 import { NOVA_TOOLS } from "@/lib/anthropic/tools";
 import { executeToolCall } from "@/lib/anthropic/tools/tool-executor";
 import { checkRateLimit } from "@/lib/security/rate-limiter";
@@ -145,12 +150,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Detect coding intent & user instructions (code only, without comments, etc.)
+    const userPromptText = lastUserMsg && typeof lastUserMsg.content === "string" ? lastUserMsg.content : "";
+    const codingContext = detectCodingIntent(userPromptText);
+
     // Format system prompt
     const systemPrompt = buildNovaSystemPrompt({
       style,
       projectInstructions,
       userMemories,
       enableArtifacts: true,
+      codingContext,
     });
 
     // Format message history for unified multi-provider router
@@ -172,6 +182,20 @@ export async function POST(req: NextRequest) {
         JSON.stringify({ error: "No valid messages found to process." }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
+    }
+
+    // Ensure beginner coding instructions are included in the message payload sent to all providers
+    if (codingContext.isCoding) {
+      const lastUserIdx = formattedMessages.map((m) => m.role).lastIndexOf("user");
+      if (lastUserIdx !== -1) {
+        if (codingContext.isLevel1Beginner && !codingContext.isExplicitFunctionRequest) {
+          formattedMessages[lastUserIdx].content += `\n\n[MANDATORY INSTRUCTION: Write basic beginner school student code. Use only simple variables, input(), print(), simple loops and conditions. DO NOT use functions (no def, no function), NO classes, NO comments (#, //), NO docstrings, NO main guards, NO example usage sections. Provide 3-5 simple bullet points explanation outside the code block.]`;
+        } else if (codingContext.isWithComments) {
+          formattedMessages[lastUserIdx].content += `\n\n[INSTRUCTION: Include helpful comments inside the code explaining important steps.]`;
+        } else if (codingContext.isCodeOnly) {
+          formattedMessages[lastUserIdx].content += `\n\n[INSTRUCTION: Output code only in a markdown code block. Do NOT include any explanations or comments.]`;
+        }
+      }
     }
 
     // Determine available tools
@@ -221,9 +245,17 @@ export async function POST(req: NextRequest) {
               customApiKey,
             });
 
+            const isBeginnerCoding =
+              codingContext.isCoding &&
+              codingContext.isLevel1Beginner &&
+              !codingContext.isExplicitFunctionRequest;
+
             const toolCalls: any[] = [];
             let assistantResponseText = "";
             let assistantThinkingText = "";
+            let codeOnlyBuffer = "";
+            let codeOnlyStarted = false;
+            let codeOnlyFinished = false;
 
             for await (const chunk of responseStream) {
               // 1. Thinking / reasoning delta
@@ -238,10 +270,60 @@ export async function POST(req: NextRequest) {
               // 2. Text delta
               if (chunk.type === "text_delta" && chunk.text) {
                 assistantResponseText += chunk.text;
-                sendEvent({
-                  type: "text_delta",
-                  text: chunk.text,
-                });
+
+                // For beginner coding questions, buffer until quality check verifies the answer
+                if (isBeginnerCoding) {
+                  continue;
+                }
+
+                if (codingContext.isCodeOnly) {
+                  if (codeOnlyFinished) {
+                    continue;
+                  }
+
+                  if (!codeOnlyStarted) {
+                    codeOnlyBuffer += chunk.text;
+                    const fenceIdx = codeOnlyBuffer.indexOf("```");
+                    if (fenceIdx !== -1) {
+                      const cleanStart = codeOnlyBuffer.slice(fenceIdx);
+                      codeOnlyStarted = true;
+                      codeOnlyBuffer = "";
+                      sendEvent({
+                        type: "text_delta",
+                        text: cleanStart,
+                      });
+                    } else if (codeOnlyBuffer.length > 200) {
+                      codeOnlyStarted = true;
+                      sendEvent({
+                        type: "text_delta",
+                        text: codeOnlyBuffer,
+                      });
+                      codeOnlyBuffer = "";
+                    }
+                  } else {
+                    const closingIdx = chunk.text.indexOf("```");
+                    if (closingIdx !== -1) {
+                      const emitText = chunk.text.slice(0, closingIdx + 3);
+                      if (emitText) {
+                        sendEvent({
+                          type: "text_delta",
+                          text: emitText,
+                        });
+                      }
+                      codeOnlyFinished = true;
+                    } else {
+                      sendEvent({
+                        type: "text_delta",
+                        text: chunk.text,
+                      });
+                    }
+                  }
+                } else {
+                  sendEvent({
+                    type: "text_delta",
+                    text: chunk.text,
+                  });
+                }
               }
 
               // 3. Tool call requested by model
@@ -292,9 +374,67 @@ export async function POST(req: NextRequest) {
               }
             }
 
+            // Flush remaining codeOnlyBuffer if fence wasn't triggered
+            if (codingContext.isCodeOnly && !codeOnlyStarted && codeOnlyBuffer) {
+              sendEvent({
+                type: "text_delta",
+                text: codeOnlyBuffer,
+              });
+              codeOnlyBuffer = "";
+            }
+
             // If there are no tool calls, the model has completed its final response
             if (toolCalls.length === 0) {
               keepGoing = false;
+
+              // RESPONSE QUALITY CHECK FOR BEGINNER-LEVEL CODE
+              if (isBeginnerCoding) {
+                const quality = validateBeginnerCodeQuality(assistantResponseText, codingContext);
+                if (!quality.isValid && quality.correctionPrompt) {
+                  try {
+                    const correctionStream = providerRouter.streamChatWithFallback({
+                      requestedModel: model,
+                      messages: [
+                        ...currentMessages,
+                        { role: "assistant", content: assistantResponseText },
+                        { role: "user", content: quality.correctionPrompt },
+                      ],
+                      systemPrompt,
+                      maxTokens: 4096,
+                      temperature: 0.1,
+                      customApiKey,
+                    });
+
+                    let correctedText = "";
+                    for await (const c of correctionStream) {
+                      if (c.type === "text_delta" && c.text) {
+                        correctedText += c.text;
+                      }
+                    }
+
+                    if (correctedText && correctedText.trim().length > 0) {
+                      assistantResponseText = correctedText;
+                    }
+                  } catch (retryErr) {
+                    console.warn("Beginner code quality correction retry failed:", retryErr);
+                  }
+                }
+
+                // Format final verified beginner response
+                assistantResponseText = formatCodingResponse(assistantResponseText, codingContext);
+
+                // Stream out the validated beginner response
+                const chunkSize = 25;
+                for (let i = 0; i < assistantResponseText.length; i += chunkSize) {
+                  sendEvent({
+                    type: "text_delta",
+                    text: assistantResponseText.slice(i, i + chunkSize),
+                  });
+                }
+              } else {
+                // Apply coding response formatting to ensure compliance with modifiers
+                assistantResponseText = formatCodingResponse(assistantResponseText, codingContext);
+              }
 
               // Run Post-Delivery Accuracy & Verification Audit
               const auditResult = accuracyEngine.auditAnswerBeforeDelivery(

@@ -291,11 +291,11 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     const lang = match ? match[1] : "";
                     const codeString = String(children).replace(/\n$/, "");
 
-                    if (!inline && lang) {
+                    if (!inline && (lang || codeString.includes("\n"))) {
                       return (
                         <div className="my-3 rounded-lg border border-[var(--border)] bg-[#1e1e1e] text-white text-xs overflow-hidden shadow-subtle max-w-full">
                           <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-neutral-800 text-neutral-400 font-mono text-[11px]">
-                            <span>{lang}</span>
+                            <span>{lang || "code"}</span>
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(codeString);

@@ -4,6 +4,7 @@
  */
 
 import { classifyUserMessage, RequestIntentCategory } from "./unified-classifier";
+import { isDeveloperIdentityQuestion, BOT_BRO_DEVELOPER_RESPONSE } from "../coding/coding-prompt";
 import { fetchLiveWeather } from "../realtime/weather";
 import { fetchLiveFinanceSnapshot } from "../realtime/finance";
 import { fetchCategorizedNews } from "../realtime/news";
@@ -78,6 +79,15 @@ export async function orchestrateConversationalRequest(
   userMemories: string[] = [],
   attachments: Attachment[] = []
 ): Promise<OrchestratedResponse> {
+  // Official Bot Bro Developer Identity Check
+  if (isDeveloperIdentityQuestion(message)) {
+    return {
+      handledInternally: true,
+      intentCategory: "general_conversation",
+      responseText: BOT_BRO_DEVELOPER_RESPONSE,
+    };
+  }
+
   const classification = classifyUserMessage(message, attachments.length > 0);
   const { category, extractedParameters } = classification;
 
